@@ -12,3 +12,8 @@ How to Use
 Open the Lyrics Card Maker (https://juanaaaaaaaa.github.io/Spotify-card-maker/) in your web browser.
 Fill in the required fields.
 View and download your beautifully crafted song card.
+
+## License / Licencia
+
+This project is licensed under a custom license. For details, see the [LICENSE file](LICENSE).
+Este proyecto está licenciado bajo una licencia personalizada. Para más detalles, consulta el archivo [LICENSE](LICENSE).
