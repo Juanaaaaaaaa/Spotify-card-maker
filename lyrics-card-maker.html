@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lyrics Card Maker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+        :root {
+            --bg-color: #4A6670;
+            --card-bg: #FAF3F0;
+            --accent-color: #A8B0B6;
+            --text-color: #435B66;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --highlight-size: 100%;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-color);
+            position: relative;
+            overflow-x: hidden;
+        }
+        .background-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.5;
+            background: 
+                radial-gradient(circle at 10% 10%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 90% 90%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: pulse 10s infinite ease-in-out;
+        }
+        /* Efecto de cursor */
+        .cursor-effect {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+            transition: left 0.2s ease-out, top 0.2s ease-out;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3rem;
+            animation: fadeInUp 1s ease-out;
+        }
+        h1 {
+            font-size: 4rem;
+            color: var(--card-bg);
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            animation: float 6s infinite ease-in-out;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: slideIn 1s ease-out;
+        }
+        .card {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 30px;
+            width: 100%;
+            max-width: 600px;
+            min-height: 350px;
+            box-shadow: 0 20px 40px var(--shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-10px) rotate(1deg);
+            box-shadow: 0 30px 60px var(--shadow);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+            transform: rotate(0deg);
+            transition: all 0.6s ease;
+            pointer-events: none;
+        }
+        .card:hover::before {
+            transform: rotate(180deg);
+        }
+        .song-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .song-image-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .song-image-container:hover {
+            transform: scale(1.05);
+        }
+        .song-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .song-image-placeholder {
+            font-size: 2rem;
+            color: rgba(0, 0, 0, 0.2);
+        }
+        .upload-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 0.5rem;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .song-image-container:hover .upload-icon {
+            opacity: 1;
+        }
+        .song-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: inherit;
+            letter-spacing: -0.5px;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        .song-title:focus {
+            transform: scale(1.02);
+        }
+        .author {
+            font-size: 1.2rem;
+            color: inherit;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .author:focus {
+            opacity: 1;
+            transform: translateX(10px);
+        }
+        .lyrics {
+            font-size: 1.3rem;
+            line-height: 1.7;
+            color: inherit;
+            font-weight: 400;
+            transition: all 0.3s ease;
+        }
+        .lyrics:focus {
+            transform: scale(1.01);
+        }
+        /* Estilo para palabras destacadas */
+        .highlighted {
+            display: inline-block;
+            font-weight: 700;
+            font-size: calc(1.3rem * var(--highlight-size));
+            transition: font-size 0.3s ease;
+            color: inherit;
+        }
+        .controls-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 30px;
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 1s ease-out 0.3s backwards;
+            transition: all 0.3s ease;
+        }
+        .controls-container:hover {
+            box-shadow: 0 0 20px var(--shadow);
+            transform: translateY(-5px);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+        .control-group:hover {
+            transform: translateX(10px);
+        }
+        .control-group label {
+            font-weight: 500;
+            color: var(--card-bg);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 1.1rem;
+        }
+        .control-group label i {
+            transition: all 0.3s ease;
+        }
+        .control-group:hover label i {
+            transform: rotate(360deg);
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            background: var(--card-bg);
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+            border: none;
+            border-radius: 15px;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 15px;
+        }
+        input[type="color"]::-moz-color-swatch {
+            border: none;
+            border-radius: 15px;
+        }
+        input[type="color"]:hover {
+            transform: scale(1.02);
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        input[type="range"]:hover {
+            height: 12px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px var(--shadow);
+            transition: all 0.3s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        .buttons {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+            justify-content: center;
+        }
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: -100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .btn:hover::after {
+            left: 100%;
+        }
+        .save-btn {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        .save-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px var(--shadow);
+        }
+        .reset-btn {
+            background-color: transparent;
+            color: var(--card-bg);
+            border: 2px solid var(--card-bg);
+        }
+        .reset-btn:hover {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transform: translateY(-3px) scale(1.05);
+        }
+        .reset-btn i {
+            transition: all 0.3s ease;
+        }
+        .reset-btn:hover i {
+            transform: rotate(180deg);
+        }
+        #imageUpload {
+            display: none;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .loading-spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid white;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Instrucción de uso */
+        .usage-tip {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--card-bg);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 2rem 1rem;
+            }
+            h1 {
+                font-size: 3rem;
+            }
+            .card {
+                padding: 2rem;
+            }
+            .controls-container {
+                padding: 2rem;
+            }
+            .song-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .song-image-container {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-effect"></div>
+    <div class="cursor-effect"></div>
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Generando imagen...</p>
+    </div>
+    <div class="container">
+        <div>
+            <h1>Lyrics Card Maker</h1>
+            <p class="subtitle">Crea hermosas tarjetas con tus letras favoritas</p>
+        </div>
+        
+        <div class="card" id="lyricsCard">
+            <div class="song-header">
+                <div class="song-image-container" id="imageContainer">
+                    <div class="song-image-placeholder" id="imagePlaceholder">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <img class="song-image" id="songImage" style="display: none;">
+                    <div class="upload-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                </div>
+                <h2 class="song-title" contenteditable="true" data-placeholder="Nombre de la canción">Insert Name Song</h2>
+            </div>
+            <p class="author" contenteditable="true" data-placeholder="Nombre del artista">Insert Author</p>
+            <div class="lyrics" contenteditable="true" data-placeholder="Escribe o pega tu letra aquí">Click to edit
+Press enter to insert new lines
+Or add *highlighted words* between asterisks</div>
+        </div>
+        <div class="usage-tip">
+            <i class="fas fa-lightbulb"></i> Tip: Rodea las palabras con asteriscos para destacarlas (*ejemplo*) y controlar su tamaño
+        </div>
+        <input type="file" id="imageUpload" accept="image/*">
+        <div class="controls-container">
+            <div class="controls">
+                <div class="control-group">
+                    <label><i class="fas fa-font"></i> Color del texto</label>
+                    <input type="color" id="textColor" value="#435B66">
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-fill-drip"></i> Color de fondo</label>
+                    <input type="color" id="cardColor" value="#FAF3F0">
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-text-height"></i> Tamaño de palabras destacadas</label>
+                    <input type="range" id="textSize" min="50" max="250" value="100">
+                </div>
+                <div class="control-group">
+                    <label><i class="fas fa-border-all"></i> Radio del borde</label>
+                    <input type="range" id="borderRadius" min="0" max="50" value="30">
+                </div>
+            </div>
+            <div class="buttons">
+                <button class="btn save-btn">
+                    <i class="fas fa-download"></i>
+                    Guardar
+                </button>
+                <button class="btn reset-btn" id="resetBtn">
+                    <i class="fas fa-undo"></i>
+                    Reiniciar
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Obtener referencias a los elementos
+        const textColorInput = document.getElementById('textColor');
+        const cardColorInput = document.getElementById('cardColor');
+        const borderRadiusInput = document.getElementById('borderRadius');
+        const textSizeInput = document.getElementById('textSize');
+        const card = document.getElementById('lyricsCard');
+        const lyricsContainer = card.querySelector('.lyrics');
+        const resetBtn = document.getElementById('resetBtn');
+        const saveBtn = document.querySelector('.save-btn');
+        const imageContainer = document.getElementById('imageContainer');
+        const songImage = document.getElementById('songImage');
+        const imagePlaceholder = document.getElementById('imagePlaceholder');
+        const imageUpload = document.getElementById('imageUpload');
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        const cursorEffect = document.querySelector('.cursor-effect');
+        
+        // Valores por defecto
+        const defaultValues = {
+            textColor: '#435B66',
+            cardColor: '#FAF3F0',
+            borderRadius: '30',
+            textSize: '100',
+            hasImage: false
+        };
+        
+        // Efecto de cursor - CORREGIDO
+        document.addEventListener('mousemove', function(e) {
+            // Usar left y top en lugar de transform
+            cursorEffect.style.left = `${e.clientX}px`;
+            cursorEffect.style.top = `${e.clientY}px`;
+        });
+        
+        // Función para convertir HEX a RGB
+        function hexToRgb(hex) {
+            // Eliminar # si existe
+            hex = hex.replace(/^#/, '');
+            
+            // Parsear componentes
+            let bigint = parseInt(hex, 16);
+            let r = (bigint >> 16) & 255;
+            let g = (bigint >> 8) & 255;
+            let b = bigint & 255;
+            
+            return { r, g, b };
+        }
+        
+        // Función para determinar si un color es claro o oscuro
+        function isLightColor(hex) {
+            const rgb = hexToRgb(hex);
+            
+            // Calcular luminancia
+            // Formula: 0.299*R + 0.587*G + 0.114*B
+            const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+            
+            // Retorna true si el color es claro (luminancia > 0.5)
+            return luminance > 0.5;
+        }
+        
+        // Función para actualizar la tarjeta
+        function updateCard() {
+            // Actualizar color de fondo
+            card.style.backgroundColor = cardColorInput.value;
+            
+            // Determinar si el fondo es claro u oscuro
+            if (isLightColor(cardColorInput.value.replace('#', ''))) {
+                // Si el fondo es claro, usar texto oscuro
+                card.style.color = '#222222';
+            } else {
+                // Si el fondo es oscuro, usar texto claro
+                card.style.color = '#f5f5f5';
+            }
+            
+            // Si el usuario ha seleccionado manualmente un color de texto, usarlo en lugar del automático
+            if (textColorInput._userSelected) {
+                card.style.color = textColorInput.value;
+            }
+            
+            // Actualizar tamaño de las palabras destacadas
+            const size = textSizeInput.value / 100; // Convertir a valor decimal
+            document.documentElement.style.setProperty('--highlight-size', size);
+            
+            // Actualizar radius
+            card.style.borderRadius = `${borderRadiusInput.value}px`;
+        }
+        
+        // Función para procesar el texto y destacar palabras entre asteriscos
+        function processHighlightedText() {
+            // Salvaguardar las selecciones actuales
+            const selection = window.getSelection();
+            const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+            const activeElement = document.activeElement;
+            const isLyricsActive = activeElement === lyricsContainer;
+            
+            // Obtener el texto actual
+            const content = lyricsContainer.innerHTML;
+            
+            // Buscar patrones de texto entre asteriscos, pero evitar procesar etiquetas HTML
+            // Este regex busca asteriscos que no estén dentro de etiquetas HTML
+            const processedContent = content.replace(/([^>]*)(\*([^*]+)\*)([^<]*)/g, function(match, before, fullMatch, highlighted, after) {
+                return `${before}<span class="highlighted">${highlighted}</span>${after}`;
+            });
+            
+            // Actualizar el contenido solo si hay cambios
+            if (content !== processedContent) {
+                lyricsContainer.innerHTML = processedContent;
+                
+                // Restaurar la selección si el elemento estaba activo
+                if (isLyricsActive && range) {
+                    try {
+                        // Intentar restaurar la selección, pero podría no ser posible exactamente
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    } catch (e) {
+                        // Ignorar errores de selección
+                        console.warn("No se pudo restaurar la selección exacta");
+                    }
+                }
+            }
+        }
+        
+        // Event listeners para los inputs
+        textColorInput.addEventListener('input', function() {
+            textColorInput._userSelected = true;
+            updateCard();
+        });
+        
+        cardColorInput.addEventListener('input', function() {
+            updateCard();
+            // Reiniciar la selección manual del texto cuando se cambia el fondo
+            textColorInput._userSelected = false;
+        });
+        
+        textSizeInput.addEventListener('input', updateCard);
+        borderRadiusInput.addEventListener('input', updateCard);
+        
+        // Observar cambios en el contenido editable para procesar texto destacado
+        lyricsContainer.addEventListener('input', function() {
+            processHighlightedText();
+        });
+        
+        // Procesar el texto inicial en caso de que ya contenga asteriscos
+        processHighlightedText();
+        
+        // Event listener para el botón de reset
+        resetBtn.addEventListener('click', () => {
+            textColorInput.value = defaultValues.textColor;
+            cardColorInput.value = defaultValues.cardColor;
+            borderRadiusInput.value = defaultValues.borderRadius;
+            textSizeInput.value = defaultValues.textSize;
+            textColorInput._userSelected = false;
+            updateCard();
+            
+            // Resetear la imagen
+            songImage.style.display = 'none';
+            imagePlaceholder.style.display = 'block';
+            defaultValues.hasImage = false;
+            
+            // Efecto de reset
+            const oldTransition = card.style.transition;
+            card.style.transition = 'all 0.5s ease';
+            card.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                card.style.transform = '';
+                
+                // Restaurar las animaciones originales después de que termine el efecto
+                setTimeout(() => {
+                    // Forzar un repintado para reiniciar las animaciones
+                    card.style.animation = 'none';
+                    card.offsetHeight; // Trigger reflow
+                    card.style.animation = null;
+                    card.style.transition = oldTransition;
+                }, 500);
+            }, 100);
+        });
+        
+        // Inicializar la tarjeta con los valores por defecto
+        updateCard();
+        
+        // Manejar la carga de imágenes
+        imageContainer.addEventListener('click', () => {
+            imageUpload.click();
+        });
+        
+        imageUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    songImage.src = e.target.result;
+                    songImage.style.display = 'block';
+                    imagePlaceholder.style.display = 'none';
+                    defaultValues.hasImage = true;
+                }
+                
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Función para guardar la tarjeta como imagen
+        saveBtn.addEventListener('click', () => {
+            // Mostrar overlay de carga
+            loadingOverlay.classList.add('active');
+            
+            // Crear un efecto de clic
+            saveBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                saveBtn.style.transform = 'scale(1)';
+            }, 100);
+            
+            // Usar html2canvas para convertir a imagen
+            setTimeout(() => {
+                html2canvas(card, {
+                    scale: 2, // Mayor calidad
+                    useCORS: true,
+                    backgroundColor: null,
+                    onclone: function(clonedDoc) {
+                        // Asegurarse de mantener los estilos en el clon
+                        const clonedCard = clonedDoc.getElementById('lyricsCard');
+                        clonedCard.style.transform = 'none';
+                    }
+                }).then(canvas => {
+                    // Convertir a imagen y descargar
+                    const link = document.createElement('a');
+                    link.download = 'lyrics-card.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    // Ocultar overlay de carga
+                    loadingOverlay.classList.remove('active');
+                }).catch(error => {
+                    console.error('Error al generar la imagen:', error);
+                    alert('Hubo un error al generar la imagen. Por favor, intenta de nuevo.');
+                    loadingOverlay.classList.remove('active');
+                });
+            }, 500);
+        });
+        
+        // Asegurar que los elementos editables muestren su placeholder
+        const editables = document.querySelectorAll('[contenteditable="true"]');
+        editables.forEach(el => {
+            el.addEventListener('focus', function() {
+                if (this.textContent.trim() === this.getAttribute('data-placeholder')) {
+                    this.textContent = '';
+                }
+            });
+            
+            el.addEventListener('blur', function() {
+                if (this.textContent.trim() === '') {
+                    this.textContent = this.getAttribute('data-placeholder');
+                }
+                
+                // Procesar destacados después de perder el foco también
+                if (this === lyricsContainer) {
+                    processHighlightedText();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
